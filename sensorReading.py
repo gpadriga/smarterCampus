@@ -21,14 +21,14 @@ def main():
     bme.set_gas_status(bme680.ENABLE_GAS_MEAS)
 
     # Main loop
-    while (count < REPEAT):
+    while (1):
 		if bme.get_sensor_data():
-			temperatureCelcius = float("{0:.2f}".format(sensor.data.temperature))
+			tempCelcius = float("{0:.2f}".format(bme.data.temperature))
 			#Convert the above variable to fahrenheit
-			temperature = float(temperatureCelcius*(9/5) + 32)
-			pressure = float("{0:.2f}".format(sensor.data.pressure))
-			humidity = float("{0:.2f}".format(sensor.data.humidity))
-			gas = float("{0:.2f}".format(sensor.data.gas_resistance))
+			temperature = float(tempCelcius*(9/5) + 32)
+			pressure = float("{0:.2f}".format(bme.data.pressure))
+			humidity = float("{0:.2f}".format(bme.data.humidity))
+			gas = float("{0:.2f}".format(bme.data.gas_resistance))
 
 			print("Temperature: " + str(temperature))
 			print("Pressure:" + str(pressure))
