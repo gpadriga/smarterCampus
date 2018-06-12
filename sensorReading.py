@@ -2,6 +2,7 @@
 # Includes: BME680, TSL2561 Light Sensor
 
 import bme680
+from tsl2561 import TSL2561
 import time
 import os
 
@@ -29,11 +30,20 @@ def main():
 			pressure = float("{0:.2f}".format(bme.data.pressure))
 			humidity = float("{0:.2f}".format(bme.data.humidity))
 			gas = float("{0:.2f}".format(bme.data.gas_resistance))
-
-			print("Temperature: " + str(temperature))
-			print("Pressure:" + str(pressure))
-			print("Humidity:" + str(humidity))
-			print("Gas:" + str(gas) + '\n')
+			
+			# Read from lux sensor
+			tsl = TSL2561(debug=True)
+			
+			print("      BME680")
+			print("Temperature: {}".format(temperature))
+			print("Pressure: {}".format(pressure))
+			print("Humidity: {}".format(humidity))
+			print("Gas: {}".format(gas))
+			print('\n')
+			
+			print("     TSL2561")
+			print("Lux: {}".format(tsl.lux()))
+			print ("------------------------")
 			
 			count += 1
 			
