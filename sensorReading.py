@@ -27,7 +27,7 @@ def main():
     stream = pyaud.open(
 		format = pyaudio.paInt16,
 		channels = 1,
-		rate = 44100,
+		rate = 32000,
 		input_device_index = 2,
 		input = True)
     
