@@ -6,6 +6,9 @@ import bme680
 from tsl2561 import TSL2561
 import time
 import os
+import numpy
+import pyaudio
+import analyse
 
 # Some variables
 REPEAT = 5
@@ -18,7 +21,7 @@ def main():
     # Initialize db
     con = sqlite3.connect('data.db')
     c = con.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS data(temp FLOAT, pres FLOAT, hum FLOAT, gas FLOAT, lux INTEGER)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS data(temp FLOAT, pres FLOAT, hum FLOAT, gas FLOAT, lux INTEGER, db FLOAT)''')
 
     #Initialize sensor
     bme.set_humidity_oversample(bme680.OS_2X)
@@ -26,9 +29,19 @@ def main():
     bme.set_temperature_oversample(bme680.OS_8X)
     bme.set_filter(bme680.FILTER_SIZE_3)
     bme.set_gas_status(bme680.ENABLE_GAS_MEAS)
+    
+    # Initialize USB mic
+    pyaud = pyaudio.PyAudio()
+    stream = pyaud.open(
+	format = pyaudio.paInt16,
+	channels = 1,
+	rate = 32000,
+	input_device_index = 2,
+	input = True)
 
     # Main loop
     while (count < REPEAT):
+	    # Read from BME
 	    bme.get_sensor_data()
 	    tempCelcius = float("{0:.2f}".format(bme.data.temperature))
 	    #Convert the above variable to fahrenheit
@@ -39,7 +52,12 @@ def main():
 			
 	    # Read from lux sensor
 	    tsl = TSL2561(debug=True)
-	    luxVal = tsl.lux()	    
+	    luxVal = tsl.lux()
+	    
+	    # Read from USB mic
+            rawsamps = stream.read(2048, exception_on_overflow=False)
+            samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
+            dB = analyse.loudness(samps)
 	
 	    print("      BME680")
 	    print("Temperature: {}".format(temperature))
@@ -47,13 +65,15 @@ def main():
 	    print("Humidity: {}".format(humidity))
 	    print("Gas: {}".format(gas))
 	    print('\n')
-			
 	    print("     TSL2561")
-	    print("Lux: {}".format(luxVal))
-	    print ("------------------------")
+            print("Lux: {}".format(luxVal))
+            print('\n')
+            print("     USB Mic")
+            print ("------------------------")
+            print ("Sound in dB: {}".format(dB)) 
             
-	    values = (temperature, pressure, humidity, gas, luxVal)
-            c.execute("INSERT INTO data VALUES(?, ?, ?, ?, ?)", values)
+	    values = (temperature, pressure, humidity, gas, luxVal, dB)
+            c.execute("INSERT INTO data VALUES(?, ?, ?, ?, ?, ?)", values)
 	    count += 1
 			
 	    time.sleep(WAIT_PERIOD)
