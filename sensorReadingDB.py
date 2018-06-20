@@ -1,5 +1,5 @@
 # Read data from all sensors and print
-# Includes: BME680, TSL2561 Light Sensor
+# Includes: BME680, TSL2561 Light Sensor, USB microphone
 
 import sqlite3
 import bme680

@@ -1,5 +1,5 @@
 # Read data from all sensors and print
-# Includes: BME680, TSL2561 Light Sensor
+# Includes: BME680, TSL2561 Light Sensor, USB microphone
 
 import bme680
 from tsl2561 import TSL2561
