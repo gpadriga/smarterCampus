@@ -48,7 +48,7 @@ def main():
         # Read from USB mic
         rawsamps = stream.read(2048, exception_on_overflow=False)
         samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
-        dB = analyse.loudness(samps)
+        dB = analyse.loudness(samps) + 60
         
         print("      BME680")
         print("Temperature: {}".format(temperature))

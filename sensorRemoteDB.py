@@ -1,7 +1,8 @@
+
 # Read data from all sensors and print
 # Includes: BME680, TSL2561 Light Sensor, USB microphone
 
-import sqlite3
+import MySQLdb
 import bme680
 from tsl2561 import TSL2561
 import time
@@ -13,15 +14,20 @@ import analyse
 # Some variables
 REPEAT = 5
 WAIT_PERIOD = 2
+HOST = "155.246.80.48"
+PORT = 3306
+USER = "gpadriga"
+PASSWORD = "summer18"
+DB = "readings"
 
 def main():
     count = 0
     bme = bme680.BME680(i2c_addr=0x77)
 
     # Initialize db
-    con = sqlite3.connect('data.db')
+    con = MySQLdb.Connection(host=HOST, port=PORT, user=USER, passwd=PASSWORD, db=DB)
     c = con.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS data(temp FLOAT, pres FLOAT, hum FLOAT, gas FLOAT, lux INTEGER, db FLOAT)''')
+    #c.execute(CREATE TABLE IF NOT EXISTS data (temp FLOAT, pres FLOAT, hum FLOAT, gas FLOAT, lux INT, dbs FLOAT))
 
     #Initialize sensor
     bme.set_humidity_oversample(bme680.OS_2X)
@@ -33,11 +39,12 @@ def main():
     # Initialize USB mic
     pyaud = pyaudio.PyAudio()
     stream = pyaud.open(
-	format = pyaudio.paInt16,
-	channels = 1,
-	rate = 32000,
-	input_device_index = 2,
-	input = True)
+		format = pyaudio.paInt16,
+		channels = 1,
+		rate = 32000,
+		input_device_index = 2,
+		input = True
+	)
 
     # Main loop
     while (count < REPEAT):
@@ -57,7 +64,7 @@ def main():
 	    # Read from USB mic
             rawsamps = stream.read(2048, exception_on_overflow=False)
             samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
-            dB = analyse.loudness(samps) + 60
+            decib = analyse.loudness(samps) + 60
 	
 	    print("      BME680")
 	    print("Temperature: {}".format(temperature))
@@ -70,9 +77,9 @@ def main():
             print('\n')
             print("     USB Mic")
             print ("------------------------")
-            print ("Sound in dB: {}".format(dB)) 
+            print ("Sound in dB: {}".format(decib)) 
             
-	    values = (temperature, pressure, humidity, gas, luxVal, dB)
+	    values = (temperature, pressure, humidity, gas, luxVal, decib)
             c.execute("INSERT INTO data VALUES(?, ?, ?, ?, ?, ?)", values)
 	    count += 1
 			

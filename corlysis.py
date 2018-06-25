@@ -9,19 +9,27 @@ import os
 import numpy
 import pyaudio
 import analyse
+import requests
+import argparse
 
 # Some variables
 REPEAT = 5
 WAIT_PERIOD = 2
+URL = 'https://corlysis.com:8086/write'
+READING_DATA_PERIOD_MS = 5000.0
+SENDING_PERIOD = 2
+MAX_LINES_HISTORY = 1000
 
 def main():
     count = 0
     bme = bme680.BME680(i2c_addr=0x77)
 
     # Initialize db
-    con = sqlite3.connect('data.db')
-    c = con.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS data(temp FLOAT, pres FLOAT, hum FLOAT, gas FLOAT, lux INTEGER, db FLOAT)''')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("db", help="database name")
+    parser.add_argument("token", help="secret token")
+    args = parser.parse_args()
+    corlysis_params = {"db": args.db, "u": "token", "p": args.token, "precision": "ms"}
 
     #Initialize sensor
     bme.set_humidity_oversample(bme680.OS_2X)
@@ -39,8 +47,14 @@ def main():
 	input_device_index = 2,
 	input = True)
 
+    payload = ""
+    counter = 1
+    problem_counter = 0
+
     # Main loop
-    while (count < REPEAT):
+    while (True):
+	    unix_time_ms = int(time.time()*1000)
+		
 	    # Read from BME
 	    bme.get_sensor_data()
 	    tempCelcius = float("{0:.2f}".format(bme.data.temperature))
@@ -59,6 +73,30 @@ def main():
             samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
             dB = analyse.loudness(samps) + 60
 	
+	    line = "sensors_data temperature={},pressure={},humidity={},luxVal={},dB={}, {}\n".format(temperature,
+                                                                                 pressure,
+                                                                                 humidity,
+                                                                                 luxVal,
+                                                                                 dB,
+                                                                                 unix_time_ms)
+            payload += line
+		
+	    if counter % SENDING_PERIOD == 0:
+            	try:
+                	# try to send data to cloud
+                	r = requests.post(URL, params=corlysis_params, data=payload)
+                	if r.status_code != 204:
+                    		raise Exception("data not written")
+                	payload = ""
+            	except:
+                	problem_counter += 1
+                	print('cannot write to InfluxDB')
+                	if problem_counter == MAX_LINES_HISTORY:
+                    		problem_counter = 0
+                    		payload = ""
+
+            counter += 1
+		
 	    print("      BME680")
 	    print("Temperature: {}".format(temperature))
 	    print("Pressure: {}".format(pressure))
@@ -72,13 +110,15 @@ def main():
             print ("------------------------")
             print ("Sound in dB: {}".format(dB)) 
             
-	    values = (temperature, pressure, humidity, gas, luxVal, dB)
-            c.execute("INSERT INTO data VALUES(?, ?, ?, ?, ?, ?)", values)
-	    count += 1
 			
-	    time.sleep(WAIT_PERIOD)
+	    time_diff_ms = int(time.time()*1000) - unix_time_ms
+            print(time_diff_ms)
+            if time_diff_ms < READING_DATA_PERIOD_MS:
+            	time.sleep((READING_DATA_PERIOD_MS - time_diff_ms)/1000.0)
+
     con.commit()
     con.close()
 # Run main
 if __name__ == '__main__':
     main()
+
