@@ -26,8 +26,8 @@ def main():
 
     # Initialize db
     parser = argparse.ArgumentParser()
-    parser.add_argument("db", help="database name")
-    parser.add_argument("token", help="secret token")
+    parser.add_argument("db", help="data")
+    parser.add_argument("token", help="35d4aa441b94cdbae7404050edd3fad6")
     args = parser.parse_args()
     corlysis_params = {"db": args.db, "u": "token", "p": args.token, "precision": "ms"}
 
@@ -39,13 +39,13 @@ def main():
     bme.set_gas_status(bme680.ENABLE_GAS_MEAS)
     
     # Initialize USB mic
-    pyaud = pyaudio.PyAudio()
-    stream = pyaud.open(
-	format = pyaudio.paInt16,
-	channels = 1,
-	rate = 32000,
-	input_device_index = 2,
-	input = True)
+    #pyaud = pyaudio.PyAudio()
+    #stream = pyaud.open(
+	#format = pyaudio.paInt16,
+	#channels = 1,
+	#rate = 32000,
+	#input_device_index = 2,
+	#input = True)
 
     payload = ""
     counter = 1
@@ -69,15 +69,14 @@ def main():
 	    luxVal = tsl.lux()
 	    
 	    # Read from USB mic
-            rawsamps = stream.read(2048, exception_on_overflow=False)
-            samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
-            dB = analyse.loudness(samps) + 60
+            #rawsamps = stream.read(2048, exception_on_overflow=False)
+            #samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
+            #dB = analyse.loudness(samps) + 60
 	
-	    line = "sensors_data temperature={},pressure={},humidity={},luxVal={},dB={}, {}\n".format(temperature,
+	    line = "sensors_data temperature={},pressure={},humidity={},luxVal={} {}\n".format(temperature,
                                                                                  pressure,
                                                                                  humidity,
                                                                                  luxVal,
-                                                                                 dB,
                                                                                  unix_time_ms)
             payload += line
 		
@@ -108,7 +107,7 @@ def main():
             print('\n')
             print("     USB Mic")
             print ("------------------------")
-            print ("Sound in dB: {}".format(dB)) 
+            #print ("Sound in dB: {}".format(dB)) 
             
 			
 	    time_diff_ms = int(time.time()*1000) - unix_time_ms

@@ -3,7 +3,6 @@
 
 import bme680
 from tsl2561 import TSL2561
-import datetime
 import time
 import os
 import numpy
@@ -50,22 +49,20 @@ def main():
         rawsamps = stream.read(2048, exception_on_overflow=False)
         samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
         dB = analyse.loudness(samps) + 60
-	
-	print('\n')
-	currentDT = datetime.datetime.now()
-	print(str(currentDT))        
-        print("      -- BME680 --")
+        
+        print("      BME680")
         print("Temperature: {}".format(temperature))
         print("Pressure: {}".format(pressure))
         print("Humidity: {}".format(humidity))
         print("Gas: {}".format(gas))
-        print("      -- TSL2561 --")
+        print("     TSL2561")
         print("Lux: {}".format(luxVal))
-	print("      -- USB Mic --")
-        print ("Sound in dB: {}".format(dB)) 
-	print('\n')
-	print ("---------------------------")
-		
+        print('\n')
+        print("     USB Mic")
+        print ("Sound in dB: {}".format(dB))
+	print ("________________________")
+	print('') 
+			
         time.sleep(WAIT_PERIOD)
 
 # Run main
