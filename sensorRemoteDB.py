@@ -39,18 +39,22 @@ def main():
     # Initialize USB mic
     pyaud = pyaudio.PyAudio()
     stream = pyaud.open(
-		format = pyaudio.paInt16,
-		channels = 1,
-		rate = 32000,
-		input_device_index = 2,
-		input = True
+    	format = pyaudio.paInt16,
+	channels = 1,
+	rate = 32000,
+	input_device_index = 2,
+	input = True
 	)
 
     # Main loop
     while (count < REPEAT):
+	    # Record time
+	    now = time.strftime('%Y-%m-%d %H:%M:%S')	    
+
 	    # Read from BME
 	    bme.get_sensor_data()
 	    tempCelcius = float("{0:.2f}".format(bme.data.temperature))
+	    
 	    #Convert the above variable to fahrenheit
 	    temperature = float(tempCelcius*(9/5) + 32)
 	    pressure = float("{0:.2f}".format(bme.data.pressure))
@@ -79,8 +83,12 @@ def main():
             print ("------------------------")
             print ("Sound in dB: {}".format(decib)) 
             
-	    values = (temperature, pressure, humidity, gas, luxVal, decib)
-            c.execute("INSERT INTO data VALUES(?, ?, ?, ?, ?, ?)", values)
+	    values = (temperature, pressure, humidity, gas, luxVal, decib, now)
+            add_val = ("INSERT INTO data "
+		"(temp, pres, hum, gas, lux, db, dt)"
+		"VALUES (%s, %s, %s, %s, %s, %s, %s)")
+	    c.execute(add_val, values)
+
 	    count += 1
 			
 	    time.sleep(WAIT_PERIOD)
