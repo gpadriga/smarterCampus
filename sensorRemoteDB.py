@@ -1,6 +1,4 @@
-
-# Read data from all sensors and print
-# Includes: BME680, TSL2561 Light Sensor, USB microphone
+# Read data from all sensors and print Includes: BME680, TSL2561 Light Sensor, USB microphone
 
 import MySQLdb
 import bme680
@@ -69,20 +67,19 @@ def main():
             rawsamps = stream.read(2048, exception_on_overflow=False)
             samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
             decib = analyse.loudness(samps) + 60
-	
-	    print("      BME680")
+	    
+	    print("      " + now)	
+	    print("BME680--------------------------")
 	    print("Temperature: {}".format(temperature))
 	    print("Pressure: {}".format(pressure))
 	    print("Humidity: {}".format(humidity))
 	    print("Gas: {}".format(gas))
-	    print('\n')
-	    print("     TSL2561")
+	    print("TSL2561-------------------------")
             print("Lux: {}".format(luxVal))
-            print('\n')
-            print("     USB Mic")
-            print ("------------------------")
-            print ("Sound in dB: {}".format(decib)) 
-            
+            print("USB Mic-------------------------")
+            print("Sound in dB: {}".format(decib)) 
+            print("________________________________")
+ 
 	    values = (temperature, pressure, humidity, gas, luxVal, decib, now)
             add_val = ("INSERT INTO data "
 		"(temp, pres, hum, gas, lux, db, dt)"
