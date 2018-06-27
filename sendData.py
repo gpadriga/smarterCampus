@@ -43,6 +43,10 @@ def main():
 	input = True
 	)
 
+    now = time.strftime('%Y-%m-%d %H:%M:%S')
+    print("Readings began " + now)
+    print("Press ctrl+c to end readings and close connection.")
+
     # Main loop
     while (True):
 	try:
