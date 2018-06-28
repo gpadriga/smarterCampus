@@ -75,10 +75,10 @@ def main():
             #dB = analyse.loudness(samps) + 60
 	
 	    line = "sensors_data temperature={},pressure={},humidity={},luxVal={} {}\n".format(temperature,
-                                                                                 pressure,
-                                                                                 humidity,
-                                                                                 luxVal,
-                                                                                 unix_time_ms)
+             pressure,
+             humidity,
+             luxVal,
+             unix_time_ms)
             payload += line
 		
 	    if counter % SENDING_PERIOD == 0:
