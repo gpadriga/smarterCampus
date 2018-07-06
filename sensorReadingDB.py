@@ -11,11 +11,9 @@ import pyaudio
 import analyse
 
 # Some variables
-REPEAT = 5
-WAIT_PERIOD = 2
+WAIT_PERIOD = 30
 
 def main():
-    count = 0
     bme = bme680.BME680(i2c_addr=0x77)
 
     # Initialize db
@@ -40,45 +38,50 @@ def main():
 	input = True)
 
     # Main loop
-    while (count < REPEAT):
-	    # Read from BME
-	    bme.get_sensor_data()
-	    tempCelcius = float("{0:.2f}".format(bme.data.temperature))
-	    #Convert the above variable to fahrenheit
-	    temperature = float(tempCelcius*(9/5) + 32)
-	    pressure = float("{0:.2f}".format(bme.data.pressure))
-	    humidity = float("{0:.2f}".format(bme.data.humidity))
-	    gas = float("{0:.2f}".format(bme.data.gas_resistance))
+    while (True):
+	    try:
+	    	# Read from BME
+	    	bme.get_sensor_data()
+	    	tempCelcius = float("{0:.2f}".format(bme.data.temperature))
+	    	#Convert the above variable to fahrenheit
+	    	temperature = float(tempCelcius*(9/5) + 32)
+	    	pressure = float("{0:.2f}".format(bme.data.pressure))
+	    	humidity = float("{0:.2f}".format(bme.data.humidity))
+	    	gas = float("{0:.2f}".format(bme.data.gas_resistance))
 			
-	    # Read from lux sensor
-	    tsl = TSL2561(debug=True)
-	    luxVal = tsl.lux()
+	    	# Read from lux sensor
+	    	tsl = TSL2561(debug=True)
+	    	luxVal = tsl.lux()
 	    
-	    # Read from USB mic
-            rawsamps = stream.read(2048, exception_on_overflow=False)
-            samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
-            dB = analyse.loudness(samps) + 60
+	    	# Read from USB mic
+            	rawsamps = stream.read(2048, exception_on_overflow=False)
+            	samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
+            	deciVal = analyse.loudness(samps) + 60
 	
-	    print("      BME680")
-	    print("Temperature: {}".format(temperature))
-	    print("Pressure: {}".format(pressure))
-	    print("Humidity: {}".format(humidity))
-	    print("Gas: {}".format(gas))
-	    print('\n')
-	    print("     TSL2561")
-            print("Lux: {}".format(luxVal))
-            print('\n')
-            print("     USB Mic")
-            print ("------------------------")
-            print ("Sound in dB: {}".format(dB)) 
+	    	print("      BME680")
+	    	print("Temperature: {}".format(temperature))
+	    	print("Pressure: {}".format(pressure))
+	    	print("Humidity: {}".format(humidity))
+	    	print("Gas: {}".format(gas))
+	    	print('\n')
+	    	print("     TSL2561")
+            	print("Lux: {}".format(luxVal))
+            	print('\n')
+            	print("     USB Mic")
+            	print ("------------------------")
+            	print ("Sound in dB: {}".format(deciVal)) 
             
-	    values = (temperature, pressure, humidity, gas, luxVal, dB)
-            c.execute("INSERT INTO data VALUES(?, ?, ?, ?, ?, ?)", values)
-	    count += 1
-			
-	    time.sleep(WAIT_PERIOD)
-    con.commit()
+	    	values = (temperature, pressure, humidity, gas, luxVal, deciVal)
+            	c.execute("INSERT INTO data VALUES(?, ?, ?, ?, ?, ?)", values)
+		
+	    	con.commit()
+		
+	    	time.sleep(WAIT_PERIOD)
+	    except Exception as e:
+		pass
+		print(e)
     con.close()
+    
 # Run main
 if __name__ == '__main__':
     main()
