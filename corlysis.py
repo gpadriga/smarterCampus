@@ -112,19 +112,6 @@ def main():
 
 			counter += 1
 			
-			#print("      BME680")
-			#print("Temperature: {}".format(temperature))
-			#print("Pressure: {}".format(pressure))
-			#print("Humidity: {}".format(humidity))
-			#print("Gas: {}".format(gas))
-			#print('\n')
-			#print("     TSL2561")
-			#print("Lux: {}".format(luxVal))
-			#print('\n')
-			#print("     USB Mic")
-			#print ("------------------------")
-			#print ("Sound in dB: {}".format(dB)) 
-			
 			sys.stdout.write("\rCollecting data... " + animation[aniCount])
 			sys.stdout.flush()
 			aniCount += 1
