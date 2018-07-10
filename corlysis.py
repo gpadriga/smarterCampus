@@ -16,15 +16,12 @@ import argparse
 import sys
 
 # Some variables
-REPEAT = 5
-WAIT_PERIOD = 2
 URL = 'https://corlysis.com:8086/write'
 READING_DATA_PERIOD_MS = 5000.0
 SENDING_PERIOD = 2
 MAX_LINES_HISTORY = 1000
 
 def main():
-    bme = bme680.BME680(i2c_addr=0x77)
     #Initialize local db
     con = sqlite3.connect('corlysisData.db')
     c = con.cursor()
@@ -38,6 +35,7 @@ def main():
     corlysis_params = {"db": args.db, "u": "token", "p": args.token, "precision": "ms"}
 
     #Initialize sensor
+    bme = bme680.BME680(i2c_addr=0x77)
     bme.set_humidity_oversample(bme680.OS_2X)
     bme.set_pressure_oversample(bme680.OS_4X)
     bme.set_temperature_oversample(bme680.OS_8X)
