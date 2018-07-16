@@ -9,6 +9,7 @@ import os
 import numpy
 import pyaudio
 import analyse
+from uuid import getnode as get_mac
 
 # Some variables
 WAIT_PERIOD = 60
@@ -19,6 +20,8 @@ PASSWORD = "summer18"
 DB = "readings"
 
 def main():
+    mac_addr = open('/sys/class/net/wlan0/address').readline()
+    
     bme = bme680.BME680(i2c_addr=0x77)
 
     # Initialize db
@@ -34,14 +37,14 @@ def main():
     bme.set_gas_status(bme680.ENABLE_GAS_MEAS)
     
     # Initialize USB mic
-    pyaud = pyaudio.PyAudio()
-    stream = pyaud.open(
-    	format = pyaudio.paInt16,
-	channels = 1,
-	rate = 32000,
-	input_device_index = 2,
-	input = True
-	)
+    #pyaud = pyaudio.PyAudio()
+    #stream = pyaud.open(
+    #	format = pyaudio.paInt16,
+	#channels = 1,
+	#rate = 32000,
+	#input_device_index = 2,
+	#input = True
+	#)
 
     now = time.strftime('%Y-%m-%d %H:%M:%S')
     print("Readings began " + now)
@@ -68,13 +71,13 @@ def main():
 	    luxVal = tsl.lux()
 	    
 	    # Read from USB mic
-            rawsamps = stream.read(2048, exception_on_overflow=False)
-            samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
-            decib = analyse.loudness(samps) + 60
+            #rawsamps = stream.read(2048, exception_on_overflow=False)
+            #samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
+            #decib = analyse.loudness(samps) + 60
 	    
-	    values = (temperature, pressure, humidity, gas, luxVal, decib, now)
+	    values = (mac_addr, temperature, pressure, humidity, gas, luxVal, now)
             add_val = ("INSERT INTO data "
-		"(temp, pres, hum, gas, lux, db, dt)"
+		"(mac, temp, pres, hum, gas, lux, dt)"
 		"VALUES (%s, %s, %s, %s, %s, %s, %s)")
 	    c.execute(add_val, values)
 	    con.commit()

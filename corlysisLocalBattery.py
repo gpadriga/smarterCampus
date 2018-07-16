@@ -17,13 +17,13 @@ import sys
 
 # Some variables
 URL = 'https://corlysis.com:8086/write'
-READING_DATA_PERIOD_MS = 60000.0
-SENDING_PERIOD = 60
+READING_DATA_PERIOD_MS = 5000.0
+SENDING_PERIOD = 2
 MAX_LINES_HISTORY = 1000
 
 def main():
     #Initialize local db
-    con = sqlite3.connect('corlysisZeroBattery.db')
+    con = sqlite3.connect('corlysis3Battery.db')
     c = con.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS data(temp FLOAT, pres FLOAT, hum FLOAT, gas FLOAT, lux INTEGER, db FLOAT, dt DATETIME)''')
 
@@ -45,10 +45,10 @@ def main():
     # Initialize USB mic
     pyaud = pyaudio.PyAudio()
     stream = pyaud.open(
-		format = pyaudio.paInt16,
-	channels = 1,
+	format = pyaudio.paInt16,
+	channels = 3,
 	rate = 32000,
-	input_device_index = 2,
+	input_device_index = 0,
 	input = True
 	)
 
