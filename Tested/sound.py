@@ -8,12 +8,12 @@ pyaud = pyaudio.PyAudio()
 # Open input stream, 16-bit mono at 44100 Hz
 # Device 2 is USB mic
 stream = pyaud.open(
-    format = pyaudio.paInt16,
-    channels = 1,
-    rate = 16000,
-    input_device_index = 2,
-    frames_per_buffer = 1024,
-    input = True)
+    format=pyaudio.paInt16,
+    channels=1,
+    rate=16000,
+    input_device_index=2,
+    frames_per_buffer=1024,
+    input=True)
 
 while True:
     # Read raw microphone data
@@ -21,4 +21,4 @@ while True:
     # Convert raw data to NumPy array
     samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
     # Show the volume and pitch
-    print ("Sound in dB: " + str(analyse.loudness(samps)) ) 
+    print ("Sound in dB: " + str(analyse.loudness(samps)))

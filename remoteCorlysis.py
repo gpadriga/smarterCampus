@@ -1,9 +1,9 @@
 # Read data from all sensors and print
-# also send to local DB
+# also send to remote DB
 # Includes: BME680, TSL2561 Light Sensor, USB microphone test
-# Remember to run like "python corlysis.py data [token]"
+# Run as "python remoteCorlysis.py [corlysisDBname] [token]"
 
-import sqlite3
+import MySQLdb
 import bme680
 from tsl2561 import TSL2561
 import time
@@ -14,19 +14,28 @@ import analyse
 import requests
 import argparse
 import sys
+from uuid import getnode as get_mac
 
 # Some variables
 URL = 'https://corlysis.com:8086/write'
 READING_DATA_PERIOD_MS = 60000.0
 SENDING_PERIOD = 60
 MAX_LINES_HISTORY = 1000
+HOST = "155.246.80.48"
+PORT = 3306
+USER = "gpadriga"
+PASSWORD = "summer18"
+DB = "readings"
 
 
 def main():
-    # Initialize local db
-    con = sqlite3.connect('corlysisData.db')
+    mac_addr = open('/sys/class/net/wlan0/address').readline()
+
+    # Connect to db
+    con = MySQLdb.Connection(host=HOST, port=PORT,
+                             user=USER, passwd=PASSWORD, db=DB)
     c = con.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS data(temp FLOAT, pres FLOAT, hum FLOAT, gas FLOAT, lux INTEGER, db FLOAT, dt DATETIME)''')
+    #c.execute('''CREATE TABLE IF NOT EXISTS data(temp FLOAT, pres FLOAT, hum FLOAT, gas FLOAT, lux INTEGER, db FLOAT, dt DATETIME)''')
 
     # Initialize db
     parser = argparse.ArgumentParser()
@@ -45,14 +54,14 @@ def main():
     bme.set_gas_status(bme680.ENABLE_GAS_MEAS)
 
     # Initialize USB mic
-    pyaud = pyaudio.PyAudio()
-    stream = pyaud.open(
-        format=pyaudio.paInt16,
-        channels=1,
-        rate=32000,
-        input_device_index=2,
-        input=True
-    )
+    #pyaud = pyaudio.PyAudio()
+    # stream = pyaud.open(
+    #format = pyaudio.paInt16,
+    #channels = 1,
+    #rate = 32000,
+    #input_device_index = 2,
+    #input = True
+    # )
 
     payload = ""
     counter = 1
@@ -86,16 +95,15 @@ def main():
             luxVal = tsl.lux()
 
             # Read from USB mic
-            rawsamps = stream.read(2048, exception_on_overflow=False)
-            samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
-            dB = analyse.loudness(samps) + 60
+            #rawsamps = stream.read(2048, exception_on_overflow=False)
+            #samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
+            #dB = analyse.loudness(samps) + 60
 
-            line = "sensors_data temperature={},pressure={},humidity={},luxVal={},decib={} {}\n".format(temperature,
-                                                                                                        pressure,
-                                                                                                        humidity,
-                                                                                                        luxVal,
-                                                                                                        dB,
-                                                                                                        unix_time_ms)
+            line = "sensors_data temperature={},pressure={},humidity={},luxVal={} {}\n".format(temperature,
+                                                                                               pressure,
+                                                                                               humidity,
+                                                                                               luxVal,
+                                                                                               unix_time_ms)
             payload += line
 
             if counter % SENDING_PERIOD == 0:
@@ -115,6 +123,7 @@ def main():
 
             counter += 1
 
+            # Print animation
             sys.stdout.write("\rCollecting data... " + animation[aniCount])
             sys.stdout.flush()
             aniCount += 1
@@ -126,9 +135,12 @@ def main():
             if time_diff_ms < READING_DATA_PERIOD_MS:
                 time.sleep((READING_DATA_PERIOD_MS - time_diff_ms)/1000.0)
 
-            values = (temperature, pressure, humidity, gas, luxVal, dB, now)
-            c.execute("INSERT INTO data VALUES(?, ?, ?, ?, ?, ?, ?)", values)
-
+            values = (mac_addr, temperature, pressure,
+                      humidity, gas, luxVal, now)
+            add_val = ("INSERT INTO data "
+                       "(mac, temp, pres, hum, gas, lux, dt)"
+                       "VALUES (%s, %s, %s, %s, %s, %s, %s)")
+            c.execute(add_val, values)
             con.commit()
 
         except KeyboardInterrupt:
