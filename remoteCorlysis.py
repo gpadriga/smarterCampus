@@ -18,8 +18,8 @@ from uuid import getnode as get_mac
 
 # Some variables
 URL = 'https://corlysis.com:8086/write'
-READING_DATA_PERIOD_MS = 60000.0
-SENDING_PERIOD = 60
+READING_DATA_PERIOD_MS = 5000.0
+SENDING_PERIOD = 2
 MAX_LINES_HISTORY = 1000
 HOST = "155.246.80.48"
 PORT = 3306
@@ -54,14 +54,14 @@ def main():
     bme.set_gas_status(bme680.ENABLE_GAS_MEAS)
 
     # Initialize USB mic
-    #pyaud = pyaudio.PyAudio()
-    # stream = pyaud.open(
-    #format = pyaudio.paInt16,
-    #channels = 1,
-    #rate = 32000,
-    #input_device_index = 2,
-    #input = True
-    # )
+    pyaud = pyaudio.PyAudio()
+    stream = pyaud.open(
+    format = pyaudio.paInt16,
+    channels = 1,
+    rate = 32000,
+    input_device_index = 2,
+    input = True
+    )
 
     payload = ""
     counter = 1
@@ -95,14 +95,15 @@ def main():
             luxVal = tsl.lux()
 
             # Read from USB mic
-            #rawsamps = stream.read(2048, exception_on_overflow=False)
-            #samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
-            #dB = analyse.loudness(samps) + 60
+            rawsamps = stream.read(2048, exception_on_overflow=False)
+            samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
+            deciVal = analyse.loudness(samps) + 65
 
-            line = "sensors_data temperature={},pressure={},humidity={},luxVal={} {}\n".format(temperature,
+            line = "sensors_data temperature={},pressure={},humidity={},luxVal={},decib={} {}\n".format(temperature,
                                                                                                pressure,
                                                                                                humidity,
                                                                                                luxVal,
+                                                                                               deciVal,
                                                                                                unix_time_ms)
             payload += line
 
@@ -136,10 +137,10 @@ def main():
                 time.sleep((READING_DATA_PERIOD_MS - time_diff_ms)/1000.0)
 
             values = (mac_addr, temperature, pressure,
-                      humidity, gas, luxVal, now)
+                      humidity, gas, luxVal, deciVal, now)
             add_val = ("INSERT INTO data "
-                       "(mac, temp, pres, hum, gas, lux, dt)"
-                       "VALUES (%s, %s, %s, %s, %s, %s, %s)")
+                       "(mac, temp, pres, hum, gas, lux, db, dt)"
+                       "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
             c.execute(add_val, values)
             con.commit()
 
