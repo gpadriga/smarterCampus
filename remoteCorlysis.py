@@ -35,7 +35,7 @@ def main():
     con = MySQLdb.Connection(host=HOST, port=PORT,
                              user=USER, passwd=PASSWORD, db=DB)
     c = con.cursor()
-    #c.execute('''CREATE TABLE IF NOT EXISTS data(temp FLOAT, pres FLOAT, hum FLOAT, gas FLOAT, lux INTEGER, db FLOAT, dt DATETIME)''')
+    c.execute('''CREATE TABLE IF NOT EXISTS data(mac CHAR(17), temp FLOAT, pres FLOAT, hum FLOAT, gas FLOAT, lux INTEGER, db FLOAT, dt DATETIME)''')
 
     # Initialize db
     parser = argparse.ArgumentParser()
