@@ -99,7 +99,8 @@ def main():
             temperature = float(tempCelcius*(9/5) + 32)
             pressure = float("{0:.2f}".format(bme.data.pressure))
             humidity = float("{0:.2f}".format(bme.data.humidity))
-            gas = float("{0:.2f}".format(bme.data.gas_resistance))
+            # Convert ohms to kohms
+            gas = float("{0:.2f}".format((bme.data.gas_resistance/1000)))
 
             # Read from lux sensor
             tsl = TSL2561(debug=True)
