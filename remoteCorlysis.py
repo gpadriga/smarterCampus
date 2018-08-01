@@ -14,7 +14,9 @@ import analyse
 import requests
 import argparse
 import sys
+import logging
 from uuid import getnode as get_mac
+import io
 
 # Some variables
 URL = 'https://corlysis.com:8086/write'
@@ -27,55 +29,64 @@ USER = "gpadriga"
 PASSWORD = "summer18"
 DB = "readings"
 
-
 def main():
-    mac_addr = open('/sys/class/net/wlan0/address').readline()
+    try:
+        mac_addr = open('/sys/class/net/wlan0/address').readline()
 
-    # Connect to db
-    con = MySQLdb.Connection(host=HOST, port=PORT,
-                             user=USER, passwd=PASSWORD, db=DB)
-    c = con.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS data(mac CHAR(17), temp FLOAT, pres FLOAT, hum FLOAT, gas FLOAT, lux INTEGER, db FLOAT, dt DATETIME)''')
+        # Connect to remote mySQL db
+        con = MySQLdb.Connection(host=HOST, port=PORT,
+                                 user=USER, passwd=PASSWORD, db=DB)
+        c = con.cursor()
+        c.execute('''CREATE TABLE IF NOT EXISTS data(mac CHAR(17), temp FLOAT, pres FLOAT, hum FLOAT, gas FLOAT, lux INTEGER, db FLOAT, dt DATETIME)''')
 
-    # Initialize db
-    parser = argparse.ArgumentParser()
-    parser.add_argument("db", help="dataDB")
-    parser.add_argument("token", help="35d4aa441b94cdbae7404050edd3fad6")
-    args = parser.parse_args()
-    corlysis_params = {"db": args.db, "u": "token",
-                       "p": args.token, "precision": "ms"}
+        # Initialize Corlysis db
+        parser = argparse.ArgumentParser()
+        parser.add_argument("db", help="dataDB")
+        parser.add_argument("token", help="35d4aa441b94cdbae7404050edd3fad6")
+        args = parser.parse_args()
+        corlysis_params = {"db": args.db, "u": "token",
+                           "p": args.token, "precision": "ms"}
 
-    # Initialize sensor
-    bme = bme680.BME680(i2c_addr=0x77)
-    bme.set_humidity_oversample(bme680.OS_2X)
-    bme.set_pressure_oversample(bme680.OS_4X)
-    bme.set_temperature_oversample(bme680.OS_8X)
-    bme.set_filter(bme680.FILTER_SIZE_3)
-    bme.set_gas_status(bme680.ENABLE_GAS_MEAS)
+        # Initialize sensor
+        bme = bme680.BME680(i2c_addr=0x77)
+        bme.set_humidity_oversample(bme680.OS_2X)
+        bme.set_pressure_oversample(bme680.OS_4X)
+        bme.set_temperature_oversample(bme680.OS_8X)
+        bme.set_filter(bme680.FILTER_SIZE_3)
+        bme.set_gas_status(bme680.ENABLE_GAS_MEAS)
 
-    # Initialize USB mic
-    pyaud = pyaudio.PyAudio()
-    stream = pyaud.open(
-    format = pyaudio.paInt16,
-    channels = 1,
-    rate = 32000,
-    input_device_index = 2,
-    input = True
-    )
+        # Initialize USB mic
+        pyaud = pyaudio.PyAudio()
+        stream = pyaud.open(
+        format = pyaudio.paInt16,
+        channels = 1,
+        rate = 32000,
+        input_device_index = 2,
+        input = True
+        )
 
-    payload = ""
-    counter = 1
-    problem_counter = 0
+        payload = ""
+        counter = 1
+        problem_counter = 0
 
-    now = time.strftime('%Y-%m-%d %H:%M:%S')
-    print("Readings began " + now)
-    print("Press ctrl+c to end readings and close connection.")
+        now = time.strftime('%Y-%m-%d %H:%M:%S')
+        print("Readings began " + now)
+        print("Press ctrl+c to end readings and close connection.")
 
-    animation = "|/-\\"
-    aniCount = 0
+        animation = "|/-\\"
+        aniCount = 0
+        
+    except Exception as e:
+        print(e)
+        f = open("/home/pi/smarterCampus/errors.txt" , "w")
+        f.write(str(e) + '\n')
+        f.close()
+        exit(1)
 
     # Main loop
     while (True):
+        # Only have to write to log if an error occured
+        ERROR = False
         try:
             # Get time for corlysis and db
             unix_time_ms = int(time.time()*1000)
@@ -99,9 +110,10 @@ def main():
             samps = numpy.fromstring(rawsamps, dtype=numpy.int16)
             deciVal = analyse.loudness(samps) + 65
 
-            line = "sensors_data temperature={},pressure={},humidity={},luxVal={},decib={} {}\n".format(temperature,
+            line = "sensors_data temperature={},pressure={},humidity={},gas={},luxVal={},decib={} {}\n".format(temperature,
                                                                                                pressure,
                                                                                                humidity,
+                                                                                               gas,
                                                                                                luxVal,
                                                                                                deciVal,
                                                                                                unix_time_ms)
@@ -146,12 +158,17 @@ def main():
 
         except KeyboardInterrupt:
             con.close()
-            break
+            if ERROR == True:
+                f.write("End of log since " + now + "\n\n")
+                f.close()
+            exit(0)
 
         except Exception as e:
             pass
+            f = open("/home/pi/smarterCampus/Databases/Errors.txt" , "w")
             print(e)
-
+            f.write(str(e) + '\n')
+            ERROR = True
 
 # Run main
 if __name__ == '__main__':
